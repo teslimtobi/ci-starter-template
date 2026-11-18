@@ -14,9 +14,9 @@ concurrency:
 
 jobs:
   ci:
-    name: Lint and build
+    name: Lint, type check, test and build
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Check out the code
         uses: actions/checkout@v4
@@ -33,5 +33,26 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
       - name: Build
         run: npm run build
+
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out the full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Fails the check if a password, key or token has been committed.
+      # Gitleaks is pinned to an exact version so results stay predictable.
+      - name: Scan for committed secrets (Gitleaks)
+        run: docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.30.1 git /repo --redact --verbose
